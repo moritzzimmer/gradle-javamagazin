@@ -1,0 +1,94 @@
+apply plugin: 'cargo'
+apply plugin: 'war'
+
+description = 'addressManager web - contains web resources (static and dynamic)'
+
+buildscript {
+    repositories {
+        add(new org.apache.ivy.plugins.resolver.URLResolver()) {
+            name = 'GitHub'
+            addArtifactPattern 'http://cloud.github.com/downloads/[organisation]/[module]/[module]-[revision].[ext]'
+        }
+    }
+
+    dependencies {
+        classpath 'bmuschko:gradle-cargo-plugin:0.5.4'
+    }
+}
+
+dependencies {
+	compile project(':addressManager-domain')
+	compile project(':addressManager-business')
+
+	compile ("org.jboss.solder:solder-impl:$solderVersion")
+	
+	// seam security
+	compile ("org.jboss.seam.security:seam-security-api:$seamSecurityVersion")
+	compile ("org.jboss.seam.security:seam-security:$seamSecurityVersion")
+
+	// seam faces
+	compile ("org.jboss.seam.faces:seam-faces-api:$seamSecurityVersion")
+	compile ("org.jboss.seam.faces:seam-faces:$seamSecurityVersion")
+	
+	// seam faces need joda and prettyfaces
+	compile ("joda-time:joda-time:$jodaTimeVersion")
+	compile ("com.ocpsoft:prettyfaces-jsf2:$prettyFacesVersion")
+		
+	// same scope as 'compile' configuration except that listed dependencies won't be added to the WAR
+	providedCompile (
+			"org.jboss.spec:jboss-javaee-6.0:$javaEEVersion"
+	)
+
+	runtime ("org.richfaces.ui:richfaces-components-ui:$richFacesVersion")
+	runtime ("org.richfaces.core:richfaces-core-impl:$richFacesVersion")
+	
+	// environment specific runtime dependency
+	if (Boolean.TRUE ==  project.rootProject.ext.get('config').bootstrap) {
+		runtime project(':addressManager-bootstrap')
+	}
+
+	// exclude compile dependencies of other projects which are provided by the container, see http://issues.gradle.org/browse/GRADLE-1317
+	providedRuntime (
+			"org.hibernate:hibernate-validator:$hibernateValidationVersion",
+			"org.hibernate:hibernate-core:$hibernateVersion"
+	)
+	
+	cargo (
+		"org.codehaus.cargo:cargo-core-uberjar:$cargoVersion",
+		"org.codehaus.cargo:cargo-ant:$cargoVersion",
+		"org.jboss.as:jboss-as-controller-client:7.1.1.Final"
+	)
+}
+
+eclipse {
+	// see file 'org.eclipse.wst.common.component'
+	wtp {
+		component {
+			contextPath = 'addressManager'
+		}
+	}
+}
+
+// the plugin provides deployment capabilities for web applications to local and remote containers
+cargo {
+	containerId = 'jboss71x'
+	port = 8080
+	
+	output = file("$parent.buildDir/jboss.log")
+	
+	deployable {
+		context = 'addressManager'
+	}
+	
+	local {
+		homeDir = file("$parent.projectDir/jboss/extract/" + jbossVersion)
+		homeDir.mkdirs()
+		
+		installer {
+			installUrl 	= jbossInstallUrl
+			downloadDir = file("$parent.projectDir/jboss/download")
+			extractDir = file("$parent.projectDir/jboss/extract")
+		}
+	}
+}
+	

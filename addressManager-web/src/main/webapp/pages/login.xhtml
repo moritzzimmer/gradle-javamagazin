@@ -1,0 +1,40 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:a4j="http://richfaces.org/a4j"
+	template="/WEB-INF/layout/main-template.xhtml">
+
+	<ui:define name="content">
+
+		<div class="rf-p" style="padding: 10px; width: 250px; margin-top: 0px; margin-left: 10px;">
+
+			<h:form id="loginForm" rendered="#{not identity.loggedIn}">
+
+				<p>
+					<div><h:outputLabel value="#{messages['demoUsers']}" style="font-weight:bold;"/></div>
+					<div>xXx / xXx</div>
+					<div>spiderman / spiderman</div>
+					<div>ironman / ironman</div>
+				</p>
+				
+				<h:panelGrid style="width: 230px; text-align: left; margin-right: 0px;" columns="2">
+					
+					<h:outputLabel styleClass="loginPageLabel" for="username" value="#{messages['label.username']}" />
+					<h:inputText id="username" value="#{credentials.username}" style="width:145px; margin-left:5px; padding-left: 3px; float: right;" />
+
+					<h:outputLabel styleClass="loginPageLabel" for="password" value="#{messages['label.password']}" />
+					<h:inputSecret id="password" value="#{credentials.password}" redisplay="true"
+						style="width:145px; margin-left:5px; padding-left: 3px; float: right;" />
+
+					<h:outputText styleClass="loginPageLabel" value=" " />
+					<h:commandButton id="login" value="#{messages['label.command.login']}" action="#{identity.login}" style="width:150px; margin-left:5px; margin-bottom: 10px;" />
+					
+				</h:panelGrid>
+			</h:form>
+		</div>
+	</ui:define>
+</ui:composition>
+

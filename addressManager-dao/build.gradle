@@ -1,0 +1,30 @@
+description = 'addressManager dao - contains DAOs'
+
+configurations { 
+	// dependency configuration providing common test classes
+	testJar 
+}
+
+dependencies {
+	compile project(':addressManager-domain')
+	
+	testRuntime (
+		"org.hibernate:hibernate-entitymanager:$hibernateVersion",
+		"org.hsqldb:hsqldb:$hasqldbVersion"
+	)
+	
+	// dependency configuration 'testPersistenceUnit' provides a persistence unit for tests
+	testRuntime project(path: ':addressManager-domain', configuration: 'testPersistenceUnit')
+}
+
+task jarTestClasses(type: Jar, description: "Assembles a jar archive containing common test classes of project $project.name", group: 'build') {
+	appendix = 'test-api'
+	dependsOn classes
+	from sourceSets.test.output
+	
+	include('com/acme/am/dao/Abstract*.class', 'com/acme/am/testsupport/*.class')
+}
+
+artifacts { 
+	testJar jarTestClasses 
+}

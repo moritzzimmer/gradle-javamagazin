@@ -1,0 +1,8 @@
+description = 'addressManager bootstrap - bootstrapping database in DEV environment'
+
+dependencies {
+	compile project(':addressManager-domain')
+	compile project(':addressManager-dao')
+	
+	compile ("org.jboss.solder:solder-impl:$solderVersion")
+}

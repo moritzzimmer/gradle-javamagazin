@@ -1,0 +1,37 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+version = '0.1'
+group 	= 'org.gradle'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	groovy localGroovy()
+	compile gradleApi()
+}
+
+eclipse {
+	classpath {
+		downloadJavadoc = true
+	}
+}
+
+task initSourceFolders(description: 'Creates source folders (project setup)', group: 'IDE') << {
+	def sources = [
+		sourceSets.main,
+		sourceSets.test
+	]
+	sources*.allSource*.srcDirs.flatten().each { File srcDir ->
+		println "creating source folder: $srcDir"
+		srcDir.mkdirs()
+	}
+}
+
+task wrapper(type: Wrapper, description: 'Creates the gradle wrapper.') { gradleVersion = "1.1-rc-2" }

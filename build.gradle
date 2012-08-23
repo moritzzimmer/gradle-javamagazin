@@ -1,0 +1,145 @@
+apply plugin: 'sonar'
+apply plugin: 'aggregate-docs'
+
+description = 'addressManager (javamagazin) - gradle root project with common configuration'
+
+// read environment variables, including system properties which for instance can be passed by jenkins
+ext.systemEnv = System.getenv()
+ext.major = systemEnv.MAJOR != null ? systemEnv.MAJOR : defaultMajor
+ext.minor = systemEnv.MINOR != null ? systemEnv.MINOR : defaultMinor
+ext.buildNumber = systemEnv.BUILD_NUMBER != null ? systemEnv.BUILD_NUMBER : defaultBuildNumber
+ext.releaseType = systemEnv.RELEASETYPE != null ? systemEnv.RELEASETYPE : defaultReleaseType
+
+// print some information of the build to stout
+println """\n
+Gradle-Build with version: $gradle.gradleVersion - http://www.gradle.org
+Gradle home: $gradle.gradleHomeDir
+Gradle user directory: $gradle.gradleUserHomeDir
+Running script: ${relativePath(buildFile)}\n"""
+
+// define common plugins, tasks and properties for all projects (including root) here
+allprojects {
+	apply plugin: 'eclipse-wtp'
+	apply plugin: 'idea'
+}
+
+// define common plugins, tasks and properties for all subprojects here
+subprojects {
+	apply plugin: 'java'
+	apply plugin: 'maven'
+	apply plugin: 'checkstyle'
+	apply from: "$rootProject.projectDir/gradle/plugins/corporate.gradle"
+	
+
+	// version description will be used for all subprojects
+	version = new org.gradle.Version(version_major: major,
+		minor: minor, buildnumber: buildNumber, releaseType:releaseType) 
+
+	dependencies {
+		compile (
+			"commons-logging:commons-logging:$commonsLoggingVersion",
+			"org.jboss.spec:jboss-javaee-6.0:$javaEEVersion"
+		)
+		
+		testCompile (
+			"org.easymock:easymock:$easyMockVersion", 
+			"de.akquinet.jbosscc:jbosscc-needle:$needleVersion",
+		)
+
+		integrationTestCompile configurations.testCompile
+		integrationTestCompile configurations.compile
+		integrationTestCompile (
+			"org.jboss.arquillian.junit:arquillian-junit-container:$arquillianJunitVersion"
+		)
+		integrationTestCompile project(':addressManager-business')
+
+		testCompile project(':addressManager-domain')
+		testCompile project(':addressManager-dao')
+		
+//		integrationTestRuntime configurations.testCompile
+		integrationTestRuntime (
+			"org.jboss.as:jboss-as-arquillian-container-managed:$arquillianContainerVersion"
+		)
+	}
+
+	checkstyle {
+		configFile project.file("$project.parent.projectDir/config/checkstyle/checkstyle.xml")
+	}
+	
+	task checkstyleReport(dependsOn: checkstyleMain, 
+		group: 'verification', description: 'Generates a HTML report after executing checkstyle checks.') << {
+		ant.xslt(
+			in: "$reporting.baseDir/checkstyle/main.xml", 
+			style: "$project.parent.projectDir/config/checkstyle/checkstyle-noframes-severity-sorted.xsl",
+			out:"$reporting.baseDir/checkstyle/checkstyle.html")
+	}
+	
+	// subproject specific sonar configuration	
+	sonar {
+		project {
+			withProjectProperties { props ->
+				props["sonar.core.codeCoveragePlugin"] = "jacoco"
+				props["sonar.jacoco.reportPath"]       = "$buildDir/jacoco.exec"
+				props["sonar.jacoco.itReportPath"]     = "$buildDir/jacoco-int.exec"
+			}
+		}
+	}
+	
+	// custom plugin (see "buildSrc\src\main\groovy\org\gradle\api\plugins\aggregatedoc\AggregateDocsPlugin.groovy")
+	aggregatedocs {
+		javadoc {
+			destinationDir = project.file("$buildDir/javadoc")
+			title = project.name
+		}
+	}
+}
+
+// overall sonar configuration
+sonar {
+	project {
+		language 		= "java"
+		sourceEncoding 	= "UTF-8"
+		dynamicAnalysis	= "reuseReports"
+	}
+}
+
+task initSourceFolders(description: 'Creates source folders (project setup).', group: 'IDE') << {
+	def sources = [
+		sourceSets.main,
+		sourceSets.test
+	]
+	sources*.allSource*.srcDirs.flatten().each { File srcDir ->
+		println "creating source folder: $srcDir"
+		srcDir.mkdirs()
+	}
+}
+
+task wrapper(type: Wrapper, description: 'Creates the gradle wrapper.') { 
+	gradleVersion = '1.1'
+	
+	// example to provide a custom distribution 
+	// distributionUrl = "http://dl.dropbox.com/u/55356942/gradle-$gradleVersion-javamagazin.zip"
+}
+
+// provide group and description for some tasks missing those information
+tasks.sonarAnalyze.description('Analyzes the project to which the plugin is applied and its subprojects.')
+tasks.sonarAnalyze.group('verification')
+tasks.cleanIdeaWorkspace.description('Cleans the IDEA workspace.')
+tasks.cleanIdeaWorkspace.group('ide')
+
+/*
+ * load environment specific properties on startup. 
+ * Examples:
+ * 		gradle [tasks]  			-> environment set to dev (default)
+ * 		gradle -Penv=prod [tasks]	-> environment set to prod
+ */
+loadConfiguration()
+def loadConfiguration() {
+	def environment = hasProperty('env') ? env : 'dev'
+	project.ext.set('environment', environment)
+	println "Environment is set to $ext.environment"
+	
+	def configFile = file('environment.groovy')
+	def config = new ConfigSlurper(environment).parse(configFile.toURI().toURL())
+	project.ext.set('config', config)
+}

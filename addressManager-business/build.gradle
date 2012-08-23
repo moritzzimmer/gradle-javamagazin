@@ -1,0 +1,44 @@
+description = 'addressManager business - contains business logic'
+
+dependencies {
+	compile project(':addressManager-domain')
+	compile project(':addressManager-dao')
+	
+	compile ("org.jboss.solder:solder-impl:$solderVersion")
+	
+	// dependency configuration 'testJar' provides base test classes
+	testCompile project(path: ':addressManager-dao', configuration: 'testJar')
+	
+	testRuntime (
+		"org.hibernate:hibernate-entitymanager:$hibernateVersion",
+		"org.hsqldb:hsqldb:$hasqldbVersion"
+	)
+	
+	// dependency configuration 'testPersistenceUnit' provides a persistence unit for tests
+	testRuntime project(path: ':addressManager-domain', configuration: 'testPersistenceUnit')
+}
+
+task copyLibsForArquillian(type: Copy, description: 'Copies libraries needed by Arquillian from local Gradle repro local build dir') {
+	
+	def solderApi = project.configurations.compile*.toURI().find { URI uri -> uri.toString().indexOf('solder-api-') >= 0 }
+	println "Providing $solderApi for Arquillian tests."
+	
+	def solderImpl = project.configurations.compile*.toURI().find { URI uri -> uri.toString().indexOf('solder-impl-') >= 0 }
+	println "Providing $solderImpl for Arquillian tests."
+	
+	def solderLogging = project.configurations.compile*.toURI().find { URI uri -> uri.toString().indexOf('solder-logging-') >= 0 }
+	println "Providing $solderLogging for Arquillian tests."
+
+	from (new File(solderApi).getParentFile().getAbsolutePath()){
+		include '**/*.jar'
+	}
+	from (new File(solderImpl).getParentFile().getAbsolutePath()){
+		include '**/*.jar'
+	}
+	from (new File(solderLogging).getParentFile().getAbsolutePath()){
+		include '**/*.jar'
+	}
+	
+	into { "$buildDir/integrationTest/arquillian/libs" }
+}
+integrationTest.dependsOn copyLibsForArquillian

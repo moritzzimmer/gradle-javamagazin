@@ -1,0 +1,70 @@
+<!DOCTYPE composition PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:rich="http://richfaces.org/rich"
+	xmlns:a4j="http://richfaces.org/a4j"
+	template="/WEB-INF/layout/main-template.xhtml">
+
+	<ui:define name="content">
+
+		<p>
+			<h:outputText value="#{messages['label.contactlist.title']}" />
+		</p>
+		
+		<rich:dataTable width="700" var="contact" value="#{contactlistController.contacts}" rows="10" rendered="#{not contactlistController.contactlistIsEmpty}">
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.firstname']}" />
+				</f:facet>
+				<h:outputText value="#{contact.firstName}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.lastname']}" />
+				</f:facet>
+				<h:outputText value="#{contact.lastName}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.email']}" />
+				</f:facet>
+				<h:outputText value="#{contact.email}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.street']}" />
+				</f:facet>
+				<h:outputText value="#{contact.address.street}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.streetnumber']}" />
+				</f:facet>
+				<h:outputText value="#{contact.address.number}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.city']}" />
+				</f:facet>
+				<h:outputText value="#{contact.address.city}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.zipCode']}" />
+				</f:facet>
+				<h:outputText value="#{contact.address.country}" />
+			</rich:column>
+			<rich:column>
+				<f:facet name="header">
+					<h:outputText value="#{messages['label.contactlist.country']}" />
+				</f:facet>
+				<h:outputText value="#{contact.address.zipCode}" />
+			</rich:column>
+		</rich:dataTable>
+
+	</ui:define>
+</ui:composition>
+

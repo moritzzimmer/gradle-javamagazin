@@ -1,0 +1,1 @@
+include 'addressManager-domain', 'addressManager-dao', 'addressManager-business', 'addressManager-bootstrap', 'addressManager-web'

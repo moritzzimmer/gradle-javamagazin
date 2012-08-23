@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This file is not required if you don't need any extra configuration. -->
+<faces-config version="2.0" xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+        http://java.sun.com/xml/ns/javaee
+        http://java.sun.com/xml/ns/javaee/web-facesconfig_2_0.xsd">
+
+	<!-- This descriptor activates the JSF 2.0 Servlet -->
+	<navigation-rule>
+		<display-name>Global Login and Logout</display-name>
+		<from-view-id>*</from-view-id>
+		<navigation-case>
+			<display-name>Logging in</display-name>
+			<from-action>#{identity.login}</from-action>
+			<if>#{identity.loggedIn and not responseCommited}</if>
+			<to-view-id>/pages/addresses/list.xhtml</to-view-id>
+			<redirect />
+		</navigation-case>
+		<navigation-case>
+			<display-name>Logging failed</display-name>
+			<from-action>#{identity.login}</from-action>
+			<from-outcome>failed</from-outcome>
+			<to-view-id>/pages/login-failed.xhtml</to-view-id>
+			<redirect />
+		</navigation-case>
+		<navigation-case>
+			<display-name>Logging Out</display-name>
+			<from-action>#{identity.logout}</from-action>
+			<if>#{not identity.loggedIn}</if>
+			<to-view-id>/pages/login.xhtml</to-view-id>
+			<redirect />
+		</navigation-case>
+	</navigation-rule>
+	
+	<application>
+		<resource-bundle>
+			<base-name>messages</base-name>
+			<var>messages</var>
+		</resource-bundle>
+		<message-bundle>messages</message-bundle>
+	</application>
+
+</faces-config>

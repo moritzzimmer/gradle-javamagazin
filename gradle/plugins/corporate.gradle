@@ -1,0 +1,131 @@
+import org.gradle.tooling.model.eclipse.EclipseProject;
+
+/*
+ * example of a script based plugin to enforce enterprise specific conventions to the build
+ */
+repositories {
+	maven { url "http://repository.jboss.org/nexus/content/groups/public-jboss/" }
+	mavenCentral()
+}
+
+plugins.withType(JavaPlugin) {
+
+	configurations {
+		// JaCoCo is a free code coverage library for Java, see http://www.eclemma.org/jacoco/
+		jacoco
+
+		integrationTestCompile {extendsFrom testCompile}
+		integrationTestRuntime {extendsFrom testRuntime}
+		
+		// example for a dependency configuration rule, no Eclipse link dependencies allowed 
+		all { Configuration configuration ->
+			configuration.incoming.afterResolve {
+				def eclipseLinkDependencies = configuration.resolvedConfiguration.resolvedArtifacts.findAll {
+					it.moduleVersion.id.group == "org.eclipse.persistence"
+				}
+	
+				if (eclipseLinkDependencies) {
+					throw new Exception("Found Eclipse-Link dependencies on configuration $configuration.name! - ${eclipseLinkDependencies*.moduleVersion*.id}")
+				}
+			}
+		}
+	}
+
+	dependencies {
+		testCompile "junit:junit:4.10"
+
+		jacoco group: "org.jacoco", name: "org.jacoco.agent", version: "0.5.7.201204190339", classifier: "runtime"
+	}
+
+	sourceSets { 
+		integrationTest {} 
+	}
+
+	task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'verification') {
+
+		testClassesDir = sourceSets.integrationTest.output.classesDir
+		classpath = sourceSets.main.output + sourceSets.integrationTest.output + configurations.integrationTestRuntime
+		
+		systemProperties['jar.path'] = jar.archivePath
+
+		// use JaCoCo agent to record execution coverage data
+		jvmArgs "-javaagent:$configurations.jacoco.asPath=destfile=$buildDir/jacoco-int.exec"
+	}
+	// check.dependsOn integrationTest
+
+	def forks = Math.max(2, (int) (Runtime.runtime.availableProcessors() / 2))
+	test {
+		// use JaCoCo agent to record execution coverage data
+		jvmArgs "-javaagent:$configurations.jacoco.asPath=destfile=$buildDir/jacoco.exec"
+		
+		// enable parallel test execution
+		maxParallelForks = forks
+	}
+	
+	tasks.withType(Test) {
+		testLogging {
+			exceptionFormat "full"
+			events "passed", "skipped", "failed"
+			minGranularity 0
+		}
+	}
+	
+	// source code must be Java 1.6 compatible
+	sourceCompatibility = "1.6"
+	tasks.withType(Compile) {
+		doFirst {
+			assert sourceCompatibility == "1.6" : "The sourceCompatibility of $name was changed!"
+		}
+	}
+
+	// set source file encoding for all compile tasks
+	tasks.withType(Compile) { options.encoding = 'UTF-8' }
+}
+
+plugins.withType(EclipsePlugin) {
+	
+	eclipse {
+		/*
+		 * the STS Gradle plugin currently deploys all jars to the container
+		 * (see https://issuetracker.springsource.com/browse/STS-2380 and http://issues.gradle.org/browse/GRADLE-1777), so you have to exclude
+		 * unecessary jars like those from the integrationTest configuration in the Gradle WTP
+		 * preferences (Preferences -> Gradle -> WTP).
+		 * 
+		 * To deploy this project to a JBoss runtime in Eclipse please exclude at least the following:
+		 * wagon.*\.jar
+		 * shrinkwrap.*\.jar
+		 * maven.*\.jar
+		 * jboss.*\.jar
+		 * jbosgi.*\.jar
+		 * arquillian.*\.jar
+		 * aether.*\.jar
+		 * hibernate.*\.jar
+		 * plexus.*\.jar
+		 * easymock.*\.jar
+		 * junit.*\.jar
+		 * hsqldb.*\.jar
+		 * hamcrest.*\.jar
+		 * google-collections.*\.jar
+		 */
+		
+		classpath {
+			// workaround to include dependencies from custom configurations, see http://issues.gradle.org/browse/GRADLE-1302
+			plusConfigurations += configurations.integrationTestRuntime
+			
+			downloadJavadoc = true
+		}
+			
+		// see file '.project'
+		project {
+			file {
+				// add checkstyle and jrebel build commands and natures
+				buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+				buildCommand 'org.zeroturnaround.eclipse.rebelXmlBuilder'
+			  
+				beforeMerged { project ->
+					project.natures.addAll(['net.sf.eclipsecs.core.CheckstyleNature', 'org.zeroturnaround.eclipse.jrebelNature'])
+				}
+			}
+		}
+	}
+}

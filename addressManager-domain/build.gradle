@@ -1,0 +1,44 @@
+description = 'addressManager domain - contains domain model'
+
+dependencies {
+	compile (
+		"org.hibernate:hibernate-validator:$hibernateValidationVersion",
+		"org.hibernate:hibernate-core:$hibernateVersion"
+	)
+}
+
+configurations {
+	testPersistenceUnit
+}
+
+task jarTestPersistenceUnit(type: Jar, description: "Assembles a jar archive containing a persistence unit for tests (project: $project.name)", group: 'build') {
+	appendix = 'test-pu'
+	dependsOn classes
+	from sourceSets.test.output
+	
+	include('needle.properties', 'META-INF/**')
+}
+
+artifacts {
+	testPersistenceUnit jarTestPersistenceUnit
+}
+
+processResources {
+	// make sure processResources is called every time, see issue http://jira.codehaus.org/browse/GRADLE-1276
+	outputs.upToDateWhen { false }
+	
+	exclude '**/persistence.xml'
+	
+	def config = project.rootProject.ext.get('config')
+	logger.info("Processing resources for '$project.name' using the following configuration: $config")
+	
+	// expands property references in each file as it is copied.
+	// see http://issues.gradle.org/browse/GRADLE-1635 for issues
+	expand(dataSource: "$config.dataSource", 
+			showSQL: "$config.hibernate.showSQL", 
+			formatSQL: "$config.hibernate.formatSQL", 
+			dialect: "$config.hibernate.dialect", 
+			hbm2ddl: "$config.hibernate.hbm2ddl.auto")
+	
+	rename '.*persistence.gradle.xml', 'persistence.xml'
+}

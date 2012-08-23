@@ -35,23 +35,26 @@ plugins.withType(JavaPlugin) {
 		testCompile "junit:junit:4.10"
 
 		jacoco group: "org.jacoco", name: "org.jacoco.agent", version: "0.5.7.201204190339", classifier: "runtime"
+		
+		integrationTestCompile sourceSets.main.output
+	    integrationTestCompile configurations.testCompile
+	    integrationTestCompile sourceSets.test.output
+	    integrationTestRuntime configurations.testRuntime
 	}
 
 	sourceSets { 
 		integrationTest {} 
 	}
 
-	task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'verification') {
-
+	task integrationTest(type: Test, dependsOn: jar, description: 'Runs the integration tests.', group: 'verification') {
 		testClassesDir = sourceSets.integrationTest.output.classesDir
-		classpath = sourceSets.main.output + sourceSets.integrationTest.output + configurations.integrationTestRuntime
-		
+		classpath = sourceSets.integrationTest.runtimeClasspath
 		systemProperties['jar.path'] = jar.archivePath
 
 		// use JaCoCo agent to record execution coverage data
 		jvmArgs "-javaagent:$configurations.jacoco.asPath=destfile=$buildDir/jacoco-int.exec"
 	}
-	// check.dependsOn integrationTest
+	check.dependsOn integrationTest
 
 	def forks = Math.max(2, (int) (Runtime.runtime.availableProcessors() / 2))
 	test {

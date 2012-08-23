@@ -46,17 +46,9 @@ subprojects {
 			"de.akquinet.jbosscc:jbosscc-needle:$needleVersion",
 		)
 
-		integrationTestCompile configurations.testCompile
-		integrationTestCompile configurations.compile
 		integrationTestCompile (
 			"org.jboss.arquillian.junit:arquillian-junit-container:$arquillianJunitVersion"
 		)
-		integrationTestCompile project(':addressManager-business')
-
-		testCompile project(':addressManager-domain')
-		testCompile project(':addressManager-dao')
-		
-//		integrationTestRuntime configurations.testCompile
 		integrationTestRuntime (
 			"org.jboss.as:jboss-as-arquillian-container-managed:$arquillianContainerVersion"
 		)

@@ -27,8 +27,8 @@ allprojects {
 subprojects {
 	apply plugin: 'java'
 	apply plugin: 'maven'
-	apply plugin: 'checkstyle'
 	apply from: "$rootProject.projectDir/gradle/plugins/corporate.gradle"
+	apply from: "$rootProject.projectDir/gradle/plugins/codequality.gradle"
 	
 
 	// version description will be used for all subprojects
@@ -54,18 +54,6 @@ subprojects {
 		)
 	}
 
-	checkstyle {
-		configFile project.file("$project.parent.projectDir/config/checkstyle/checkstyle.xml")
-	}
-	
-	task checkstyleReport(dependsOn: checkstyleMain, 
-		group: 'verification', description: 'Generates a HTML report after executing checkstyle checks.') << {
-		ant.xslt(
-			in: "$reporting.baseDir/checkstyle/main.xml", 
-			style: "$project.parent.projectDir/config/checkstyle/checkstyle-noframes-severity-sorted.xsl",
-			out:"$reporting.baseDir/checkstyle/checkstyle.html")
-	}
-	
 	// subproject specific sonar configuration	
 	sonar {
 		project {
@@ -76,6 +64,7 @@ subprojects {
 			}
 		}
 	}
+	sonarAnalyze.dependsOn check
 	
 	// custom plugin (see "buildSrc\src\main\groovy\org\gradle\api\plugins\aggregatedoc\AggregateDocsPlugin.groovy")
 	aggregatedocs {

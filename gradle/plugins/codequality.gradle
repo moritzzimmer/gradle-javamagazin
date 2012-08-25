@@ -1,0 +1,32 @@
+apply plugin: 'checkstyle'
+apply plugin: 'pmd'
+apply plugin: 'findbugs'
+
+checkstyle {
+	ignoreFailures = true
+	configFile project.file("$project.parent.projectDir/config/checkstyle/checkstyle.xml")
+}
+
+task checkstyleReport(dependsOn: checkstyleMain,
+		group: 'verification', description: 'Generates a HTML report after executing checkstyle checks.') << {
+			ant.xslt(
+					in: "$reporting.baseDir/checkstyle/main.xml",
+					style: "$project.parent.projectDir/config/checkstyle/checkstyle-noframes-severity-sorted.xsl",
+					out:"$reporting.baseDir/checkstyle/checkstyleMain.html")
+		}
+check.dependsOn checkstyleReport
+
+pmd { ignoreFailures = true }
+
+findbugs {
+	ignoreFailures = true
+	toolVersion = "$findBugsVersion"
+}
+
+task findBugsReport(dependsOn: findbugsMain, group: 'verification', description: 'Generates a HTML report after executing findbugs checks.') << {
+	ant.xslt(
+			in: "$reporting.baseDir/findbugs/main.xml",
+			style: "$project.parent.projectDir/config/findbugs/fancy.xsl",
+			out:"$reporting.baseDir/findbugs/findBugsMain.html")
+}
+check.dependsOn findBugsReport

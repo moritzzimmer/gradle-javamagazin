@@ -13,7 +13,7 @@ task javancss(group: 'verification', description: 'Runs javaNCSS tests and gener
 	
 	ant {
 		taskdef(name:'javancss', classname:'javancss.JavancssAntTask', classpath: configurations.javancss.asPath)
-		javancss(srcdir: 'src/main/java', abortOnFail:'fail', generateReport:'true', format: 'xml', outputfile: "$reportDir/main.xml")
+		javancss(srcdir: 'src/main/java', generateReport:'true', format: 'xml', outputfile: "$reportDir/main.xml")
 	}
 }
 

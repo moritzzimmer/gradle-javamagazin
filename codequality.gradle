@@ -2,18 +2,32 @@ apply plugin: 'checkstyle'
 apply plugin: 'pmd'
 apply plugin: 'findbugs'
 
+
+configurations { javancss }
+
+dependencies { javancss "javancss:javancss:$javancssVersion" }
+
+task javancss(group: 'verification', description: 'Runs javaNCSS tests and generates a report afterwards') << {
+	def reportDir = file("$reporting.baseDir/javancss")
+	reportDir.mkdirs()
+	
+	ant {
+		taskdef(name:'javancss', classname:'javancss.JavancssAntTask', classpath: configurations.javancss.asPath)
+		javancss(srcdir: 'src/main/java', abortOnFail:'fail', generateReport:'true', format: 'xml', outputfile: "$reportDir/main.xml")
+	}
+}
+
 checkstyle {
 	ignoreFailures = true
 	configFile project.file("$project.parent.projectDir/config/checkstyle/checkstyle.xml")
 }
 
-task checkstyleReport(dependsOn: checkstyleMain,
-		group: 'verification', description: 'Generates a HTML report after executing checkstyle checks.') << {
-			ant.xslt(
-					in: "$reporting.baseDir/checkstyle/main.xml",
-					style: "$project.parent.projectDir/config/checkstyle/checkstyle-noframes-severity-sorted.xsl",
-					out:"$reporting.baseDir/checkstyle/checkstyleMain.html")
-		}
+task checkstyleReport(dependsOn: checkstyleMain, group: 'verification', description: 'Generates a HTML report after executing checkstyle checks.') << {
+	ant.xslt(
+			in: "$reporting.baseDir/checkstyle/main.xml",
+			style: "$project.parent.projectDir/config/checkstyle/checkstyle-noframes-severity-sorted.xsl",
+			out:"$reporting.baseDir/checkstyle/checkstyleMain.html")
+	}
 check.dependsOn checkstyleReport
 
 pmd { ignoreFailures = true }
@@ -28,5 +42,5 @@ task findBugsReport(dependsOn: findbugsMain, group: 'verification', description:
 			in: "$reporting.baseDir/findbugs/main.xml",
 			style: "$project.parent.projectDir/config/findbugs/fancy.xsl",
 			out:"$reporting.baseDir/findbugs/findBugsMain.html")
-}
+	}
 check.dependsOn findBugsReport
